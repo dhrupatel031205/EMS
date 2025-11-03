@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.title }} - Event Management System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <h1>{{ event.title }}</h1>
+                <p class="text-muted mb-3">
+                    <i class="bi bi-person"></i> Organized by {{ event.organizer.username }}
+                    {% if not event.is_public %}<span class="badge bg-warning ms-2">Private</span>{% endif %}
+                </p>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-calendar"></i> Start:</strong> {{ event.start_time|date:"M d, Y H:i" }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-calendar"></i> End:</strong> {{ event.end_time|date:"M d, Y H:i" }}
+                    </div>
+                </div>
+                
+                <p><strong><i class="bi bi-geo-alt"></i> Location:</strong> {{ event.location }}</p>
+                
+                <div class="mt-4">
+                    <h5>Description</h5>
+                    <p>{{ event.description|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        {% if user.is_authenticated %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5>RSVP</h5>
+                <form method="post" action="{% url 'rsvp_event' event.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <select name="status" class="form-select">
+                            <option value="Going" {% if user_rsvp.status == 'Going' %}selected{% endif %}>Going</option>
+                            <option value="Maybe" {% if user_rsvp.status == 'Maybe' %}selected{% endif %}>Maybe</option>
+                            <option value="Not Going" {% if user_rsvp.status == 'Not Going' %}selected{% endif %}>Not Going</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Update RSVP</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-body">
+                <h5>Attendees ({{ rsvp_count }})</h5>
+                {% for rsvp in rsvps %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>{{ rsvp.user.username }}</span>
+                        <span class="badge bg-{% if rsvp.status == 'Going' %}success{% elif rsvp.status == 'Maybe' %}warning{% else %}secondary{% endif %}">
+                            {{ rsvp.status }}
+                        </span>
+                    </div>
+                {% empty %}
+                    <p class="text-muted">No RSVPs yet</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.is_authenticated and event.organizer == user %}
+<div class="mt-4">
+    <a href="{% url 'edit_event' event.id %}" class="btn btn-warning">Edit Event</a>
+    <a href="{% url 'delete_event' event.id %}" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete Event</a>
+</div>
+{% endif %}
+{% endblock %}
