@@ -52,6 +52,61 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Organized Events Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4>My Organized Events</h4>
+            </div>
+            <div class="card-body">
+                {% if organized_events %}
+                    <div class="row">
+                        {% for event in organized_events %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ event.title }}</h6>
+                                    <p class="card-text text-muted small">{{ event.location }}</p>
+                                    <p class="card-text small">{{ event.start_time|date:"M d, Y H:i" }}</p>
+                                    <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">You haven't organized any events yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- RSVPs Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4>My RSVPs</h4>
+            </div>
+            <div class="card-body">
+                {% if user_rsvps %}
+                    <div class="row">
+                        {% for rsvp in user_rsvps %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ rsvp.event.title }}</h6>
+                                    <p class="card-text text-muted small">{{ rsvp.event.location }}</p>
+                                    <p class="card-text small">{{ rsvp.event.start_time|date:"M d, Y H:i" }}</p>
+                                    <span class="badge bg-{% if rsvp.status == 'Going' %}success{% elif rsvp.status == 'Maybe' %}warning{% else %}danger{% endif %}">{{ rsvp.status }}</span>
+                                    <a href="{% url 'event_detail' rsvp.event.id %}" class="btn btn-sm btn-outline-primary ms-2">View Event</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">You haven't RSVP'd to any events yet.</p>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

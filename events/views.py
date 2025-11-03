@@ -359,7 +359,19 @@ def profile_view(request):
     except UserProfile.DoesNotExist:
         profile = UserProfile.objects.create(user=request.user, full_name=request.user.username)
     
-    return render(request, 'registration/profile.html', {'profile': profile})
+    # Get user's organized events
+    organized_events = Event.objects.filter(organizer=request.user).order_by('-created_at')
+    
+    # Get user's RSVPs
+    user_rsvps = RSVP.objects.filter(user=request.user).select_related('event').order_by('-created_at')
+    
+    context = {
+        'profile': profile,
+        'organized_events': organized_events,
+        'user_rsvps': user_rsvps,
+    }
+    
+    return render(request, 'registration/profile.html', context)
 
 
 @login_required

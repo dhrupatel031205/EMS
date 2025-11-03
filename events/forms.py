@@ -16,6 +16,22 @@ class EventForm(forms.ModelForm):
             'end_time': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
             'is_public': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+    
+    def clean_location(self):
+        location = self.cleaned_data.get('location')
+        if not location or not location.strip():
+            raise forms.ValidationError("Location is required.")
+        return location.strip()
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        
+        if start_time and end_time and end_time <= start_time:
+            raise forms.ValidationError("End time must be greater than start time.")
+        
+        return cleaned_data
 
 
 class RSVPForm(forms.ModelForm):
@@ -73,3 +89,15 @@ class UserProfileForm(forms.ModelForm):
             'location': forms.TextInput(attrs={'class': 'form-control'}),
             'profile_picture': forms.FileInput(attrs={'class': 'form-control'}),
         }
+    
+    def clean_full_name(self):
+        full_name = self.cleaned_data.get('full_name')
+        if not full_name or not full_name.strip():
+            raise forms.ValidationError("Full name is required.")
+        return full_name.strip()
+    
+    def clean_location(self):
+        location = self.cleaned_data.get('location')
+        if not location or not location.strip():
+            raise forms.ValidationError("Location is required.")
+        return location.strip()
