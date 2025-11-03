@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     EventViewSet, RSVPViewSet, ReviewViewSet,
     event_list, event_detail, event_create, event_edit, event_delete,
-    rsvp_event, register_view, login_view, logout_view, profile_view, profile_edit
+    rsvp_event, register_view, login_view, logout_view, profile_view, profile_edit,
+    submit_review, delete_review
 )
 
 router = DefaultRouter()
@@ -22,6 +23,8 @@ urlpatterns = [
     path('events/<int:event_id>/edit/', event_edit, name='edit_event'),
     path('events/<int:event_id>/delete/', event_delete, name='delete_event'),
     path('events/<int:event_id>/rsvp/', rsvp_event, name='rsvp_event'),
+    path('events/<int:event_id>/review/', submit_review, name='submit_review'),
+    path('events/<int:event_id>/review/delete/', delete_review, name='delete_review'),
     
     # Auth URLs
     path('register/', register_view, name='register'),

@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from .models import Event, RSVP, UserProfile
+from .models import Event, RSVP, UserProfile, Review
 
 
 class EventForm(forms.ModelForm):
@@ -22,6 +22,28 @@ class EventForm(forms.ModelForm):
         if not location or not location.strip():
             raise forms.ValidationError("Location is required.")
         return location.strip()
+
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Review
+        fields = ['rating', 'comment']
+        widgets = {
+            'rating': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 5}),
+            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Share your experience with this event...'}),
+        }
+    
+    def clean_rating(self):
+        rating = self.cleaned_data.get('rating')
+        if rating < 1 or rating > 5:
+            raise forms.ValidationError("Rating must be between 1 and 5.")
+        return rating
+    
+    def clean_comment(self):
+        comment = self.cleaned_data.get('comment')
+        if not comment or not comment.strip():
+            raise forms.ValidationError("Comment is required.")
+        return comment.strip()
     
     def clean(self):
         cleaned_data = super().clean()

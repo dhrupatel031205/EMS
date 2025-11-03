@@ -17,7 +17,7 @@ from .models import Event, RSVP, Review, UserProfile
 from .serializers import EventSerializer, RSVPSerializer, ReviewSerializer
 from .permissions import IsOrganizerOrReadOnly, IsPublicEventOrInvited
 from .tasks import send_event_notification
-from .forms import EventForm, RSVPForm, CustomUserCreationForm, CustomAuthenticationForm, UserProfileForm
+from .forms import EventForm, RSVPForm, ReviewForm, CustomUserCreationForm, CustomAuthenticationForm, UserProfileForm
 
 
 class EventViewSet(viewsets.ModelViewSet):
@@ -215,17 +215,30 @@ def event_detail(request, event_id):
 
     # Get user's RSVP if authenticated
     user_rsvp = None
+    user_review = None
     if request.user.is_authenticated:
         try:
             user_rsvp = RSVP.objects.get(event=event, user=request.user)
         except RSVP.DoesNotExist:
             pass
+        
+        try:
+            user_review = Review.objects.get(event=event, user=request.user)
+        except Review.DoesNotExist:
+            pass
+
+    # Get reviews
+    reviews = event.reviews.all().order_by('-created_at')
+    average_rating = reviews.aggregate(models.Avg('rating'))['rating__avg'] or 0
 
     context = {
         'event': event,
         'rsvps': rsvps,
         'rsvp_count': rsvp_count,
         'user_rsvp': user_rsvp,
+        'user_review': user_review,
+        'reviews': reviews,
+        'average_rating': average_rating,
     }
 
     return render(request, 'events/event_detail.html', context)
@@ -394,4 +407,53 @@ def profile_edit(request):
     return render(request, 'registration/profile_edit.html', {'form': form})
 
 
+@login_required
+def submit_review(request, event_id):
+    """Submit or update a review for an event"""
+    event = get_object_or_404(
+        Event,
+        Q(id=event_id) & (
+            Q(is_public=True) |
+            Q(organizer=request.user) |
+            Q(rsvps__user=request.user)
+        )
+    )
+    
+    try:
+        review = Review.objects.get(event=event, user=request.user)
+    except Review.DoesNotExist:
+        review = None
+    
+    if request.method == 'POST':
+        form = ReviewForm(request.POST, instance=review)
+        if form.is_valid():
+            review_obj = form.save(commit=False)
+            review_obj.event = event
+            review_obj.user = request.user
+            review_obj.save()
+            
+            if review:
+                messages.success(request, 'Review updated successfully!')
+            else:
+                messages.success(request, 'Review submitted successfully!')
+            
+            return redirect('event_detail', event_id=event.id)
+    else:
+        form = ReviewForm(instance=review)
+    
+    return render(request, 'events/review_form.html', {
+        'form': form,
+        'event': event,
+        'review': review,
+    })
 
+
+@login_required
+@require_POST
+def delete_review(request, event_id):
+    """Delete a review"""
+    event = get_object_or_404(Event, id=event_id)
+    review = get_object_or_404(Review, event=event, user=request.user)
+    review.delete()
+    messages.success(request, 'Review deleted successfully!')
+    return redirect('event_detail', event_id=event.id)
