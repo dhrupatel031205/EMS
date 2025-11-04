@@ -198,14 +198,17 @@ def event_list(request):
 def event_detail(request, event_id):
     """Display event details"""
     if request.user.is_authenticated:
-        event = get_object_or_404(
-            Event,
+        events = Event.objects.filter(
             Q(id=event_id) & (
                 Q(is_public=True) |
                 Q(organizer=request.user) |
                 Q(rsvps__user=request.user)
             )
-        )
+        ).distinct()
+        if not events.exists():
+            from django.http import Http404
+            raise Http404("Event not found")
+        event = events.first()
     else:
         event = get_object_or_404(Event, id=event_id, is_public=True)
 
@@ -294,14 +297,17 @@ def event_delete(request, event_id):
 def rsvp_event(request, event_id):
     """Handle RSVP for an event"""
     if request.user.is_authenticated:
-        event = get_object_or_404(
-            Event,
+        events = Event.objects.filter(
             Q(id=event_id) & (
                 Q(is_public=True) |
                 Q(organizer=request.user) |
                 Q(rsvps__user=request.user)
             )
-        )
+        ).distinct()
+        if not events.exists():
+            from django.http import Http404
+            raise Http404("Event not found")
+        event = events.first()
     else:
         event = get_object_or_404(Event, id=event_id, is_public=True)
 
@@ -410,14 +416,17 @@ def profile_edit(request):
 @login_required
 def submit_review(request, event_id):
     """Submit or update a review for an event"""
-    event = get_object_or_404(
-        Event,
+    events = Event.objects.filter(
         Q(id=event_id) & (
             Q(is_public=True) |
             Q(organizer=request.user) |
             Q(rsvps__user=request.user)
         )
-    )
+    ).distinct()
+    if not events.exists():
+        from django.http import Http404
+        raise Http404("Event not found")
+    event = events.first()
     
     try:
         review = Review.objects.get(event=event, user=request.user)
